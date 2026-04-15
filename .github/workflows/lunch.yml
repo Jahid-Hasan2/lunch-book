@@ -1,0 +1,39 @@
+name: Auto Lunch Booking
+
+on:
+  schedule:
+    - cron: '0 4 * * 0,1,2,3,4'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  book-lunch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npx playwright install chromium
+
+      - name: Run booking
+        env:
+          ULKA_AUTH_JSON: ${{ secrets.ULKA_AUTH_JSON }}
+        run: node auto-run.js
+
+      - name: Commit screenshot
+        run: |
+          if [ -f final-state.png ]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add final-state.png
+            git commit -m "📸 Lunch booking proof"
+            git push
+          fi
